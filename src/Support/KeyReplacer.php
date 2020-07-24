@@ -15,7 +15,7 @@ class KeyReplacer
      */
     public function replace(array $data, array $keys): array
     {
-        $newData = $data;
+        $newData = [];
 
         foreach ($data as $key => $value) {
             $newData[$this->key($key, $keys)] = $value;

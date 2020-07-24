@@ -3,9 +3,9 @@
 namespace ArtARTs36\ModifierRequestBuilder;
 
 use ArtARTs36\ModifierRequestBuilder\Contracts\ExternalConfig;
+use ArtARTs36\ModifierRequestBuilder\Exceptions\OperatorNotAvailable;
 use ArtARTs36\ModifierRequestBuilder\Support\Compilers;
 use Creatortsv\EloquentPipelinesModifier\Conditions\Condition;
-use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use ArtARTs36\ModifierRequestBuilder\Contracts\Client;
@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
  * Class Builder
  * @package ArtARTs36\ModifierRequestBuilder
  */
-class Builder implements Arrayable
+class Builder
 {
     use Compilers;
 
@@ -55,6 +55,7 @@ class Builder implements Arrayable
             '_or_where' => [],
             '_limit' => null, // @todo в модифаере нет
             '_offset' => null, // @todo в модифаере нет
+            '_distinct' => null, // @todo в модифаере нет
         ];
 
         $this->client = $client;
@@ -68,6 +69,10 @@ class Builder implements Arrayable
      */
     protected function getModifierCondition(string $operator): string
     {
+        if (empty(static::MODIFIER_CONDITIONS[$operator])) {
+            throw new OperatorNotAvailable($operator);
+        }
+
         return static::MODIFIER_CONDITIONS[$operator];
     }
 
@@ -168,7 +173,9 @@ class Builder implements Arrayable
      */
     public function toRequest(): array
     {
-        $request = $this->request;
+        $request = array_filter($this->request, function ($value) {
+            return $value === 0 || !empty($value);
+        });
 
         foreach (['_sort', '_select', '_with'] as $type) {
             if (!empty($this->request[$type])) {
@@ -179,14 +186,6 @@ class Builder implements Arrayable
         }
 
         return $request;
-    }
-
-    /**
-     * @return array|null
-     */
-    public function toArray()
-    {
-        return $this->toRequest();
     }
 
     /**
@@ -278,6 +277,46 @@ class Builder implements Arrayable
     public function getEagerLoads(): array
     {
         return $this->request['_with'];
+    }
+
+    /**
+     * @param int $value
+     * @return $this
+     */
+    public function skip(int $value): self
+    {
+        return $this->offset($value);
+    }
+
+    /**
+     * @param int $value
+     * @return $this
+     */
+    public function offset(int $value): self
+    {
+        $this->request['_offset'] = $value;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function distinct(): self
+    {
+        $this->request['_distinct'] = 1;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function notDistinct(): self
+    {
+        $this->request['_distinct'] = 0;
+
+        return $this;
     }
 
     /**

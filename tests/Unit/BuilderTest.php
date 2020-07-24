@@ -3,8 +3,13 @@
 namespace ArtARTs36\ModifierRequestBuilder\Tests\Unit;
 
 use ArtARTs36\ModifierRequestBuilder\Builder;
+use ArtARTs36\ModifierRequestBuilder\Exceptions\OperatorNotAvailable;
+use ArtARTs36\ModifierRequestBuilder\Tests\Traits\CallReflectionMethod;
+use ArtARTs36\ModifierRequestBuilder\Tests\Traits\MakeClient;
 use ArtARTs36\ModifierRequestBuilder\Tests\Traits\MakeExternalConfig;
+use ArtARTs36\ModifierRequestBuilder\Tests\Traits\MakeUrlStrategy;
 use ArtARTs36\ModifierRequestBuilder\Tests\Traits\SetReflectionProperty;
+use Creatortsv\EloquentPipelinesModifier\Conditions\Condition;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -16,6 +21,9 @@ class BuilderTest extends TestCase
 {
     use MakeExternalConfig;
     use SetReflectionProperty;
+    use MakeClient;
+    use MakeUrlStrategy;
+    use CallReflectionMethod;
 
     /**
      * @covers \ArtARTs36\ModifierRequestBuilder\Builder::where
@@ -249,7 +257,7 @@ class BuilderTest extends TestCase
     }
 
     /**
-     * @throws \ReflectionException
+     * @covers \ArtARTs36\ModifierRequestBuilder\Builder::withCount
      */
     public function testWithCount(): void
     {
@@ -269,15 +277,113 @@ class BuilderTest extends TestCase
     }
 
     /**
+     * @covers \ArtARTs36\ModifierRequestBuilder\Builder::find
+     */
+    public function testFind(): void
+    {
+        $id = rand(1, 99999);
+
+        $builder = $this->make();
+
+        //
+
+        $expected = [
+            '_filter' => [
+                'id' => [
+                    'equal' => $id,
+                ],
+            ],
+            '_limit' => 1,
+        ];
+
+        //
+
+        $builder->find($id);
+
+        self::assertEquals($expected, $builder->toRequest());
+    }
+
+    /**
+     * @covers \ArtARTs36\ModifierRequestBuilder\Builder::offset
+     * @covers \ArtARTs36\ModifierRequestBuilder\Builder::skip
+     */
+    public function testOffset(): void
+    {
+        $builder = $this->make();
+
+        $offset = 5;
+
+        $builder->offset($offset);
+
+        $expected = [
+            '_offset' => $offset,
+        ];
+
+        //
+
+        self::assertEquals($expected, $builder->toRequest());
+
+        //
+
+        $builder = $this->make();
+
+        $builder->skip($offset);
+
+        self::assertEquals($expected, $builder->toRequest());
+    }
+
+    /**
+     * @covers \ArtARTs36\ModifierRequestBuilder\Builder::distinct
+     * @covers \ArtARTs36\ModifierRequestBuilder\Builder::notDistinct
+     */
+    public function testDistinct(): void
+    {
+        $builder = $this->make();
+
+        $expected = [
+            '_distinct' => 1,
+        ];
+
+        $builder->distinct();
+
+        //
+
+        self::assertEquals($expected, $builder->toRequest());
+
+        //
+
+        $expected['_distinct'] = 0;
+
+        $builder->notDistinct();
+
+        self::assertEquals($expected, $builder->toRequest());
+    }
+
+    /**
+     * @covers \ArtARTs36\ModifierRequestBuilder\Builder::getModifierCondition
+     */
+    public function testGetModifierCondition(): void
+    {
+        $builder = $this->make();
+
+        $response = $this->callMethodViaReflection($builder, 'getModifierCondition', '=');
+
+        self::assertEquals(Condition::CONDITION_EQUAL, $response);
+
+        self::expectException(OperatorNotAvailable::class);
+
+        $this->callMethodViaReflection($builder, 'getModifierCondition', rand(1, 99));
+    }
+
+    /**
      * @return Builder
-     * @throws \ReflectionException
      */
     protected function make(): Builder
     {
-        $builder = (new \ReflectionClass(Builder::class))->newInstanceWithoutConstructor();
-
-        $this->setReflectionProperty($builder, 'externalConfig', $this->makeExternalConfig());
-
-        return $builder;
+        return new Builder(
+            $this->makeClient(),
+            $this->makeUrlStrategy(),
+            $this->makeExternalConfig()
+        );
     }
 }

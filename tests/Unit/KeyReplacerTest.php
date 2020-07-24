@@ -35,6 +35,63 @@ class KeyReplacerTest extends TestCase
     }
 
     /**
+     * @covers \ArtARTs36\ModifierRequestBuilder\Support\KeyReplacer::replace
+     */
+    public function testReplace(): void
+    {
+        $keys = [
+            'name' => '_name',
+            'patronymic' => '_patronymic',
+        ];
+
+        $replacer = $this->make();
+
+        $data = [
+            'name' => 'Artem',
+            'patronymic' => 'Viktorovich',
+        ];
+
+        $response = $replacer->replace($data, $keys);
+
+        self::assertEquals([
+            '_name' => 'Artem',
+            '_patronymic' => 'Viktorovich',
+        ], $response);
+    }
+
+    /**
+     * @covers \ArtARTs36\ModifierRequestBuilder\Support\KeyReplacer::replaceMany
+     */
+    public function testReplaceMany(): void
+    {
+        $replacer = $this->make();
+
+        $data = [
+            [
+                'name' => 'Artem',
+            ],
+            [
+                'name' => 'Viktor',
+            ],
+        ];
+
+        $keys = ['name' => '_name'];
+
+        //
+
+        $response = $replacer->replaceMany($data, $keys);
+
+        self::assertEquals([
+            [
+                '_name' => 'Artem',
+            ],
+            [
+                '_name' => 'Viktor',
+            ]
+        ], $response);
+    }
+
+    /**
      * @return KeyReplacer
      */
     protected function make(): KeyReplacer

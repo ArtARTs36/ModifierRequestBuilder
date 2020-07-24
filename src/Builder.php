@@ -47,9 +47,14 @@ class Builder implements Arrayable
     public function __construct(Client $client, UrlStrategy $urlStrategy, ExternalConfig $externalConfig)
     {
         $this->request = [
-            '_filter' => [],
             '_count' => [],
+            '_select' => [],
+            '_filter' => [],
+            '_sort' => [],
             '_with' => [],
+            '_or_where' => [],
+            '_limit' => null, // @todo в модифаере нет
+            '_offset' => null, // @todo в модифаере нет
         ];
 
         $this->client = $client;
@@ -110,7 +115,7 @@ class Builder implements Arrayable
      */
     public function limit(int $count): self
     {
-        $this->request['_count'] = $count;
+        $this->request['_limit'] = $count;
 
         return $this;
     }
@@ -250,6 +255,19 @@ class Builder implements Arrayable
             $this->request['_with'] ?? [],
             is_string($relations) ? func_get_args() : $relations
         );
+
+        return $this;
+    }
+
+    /**
+     * @param mixed $relations
+     * @return $this
+     */
+    public function withCount($relations): self
+    {
+        array_map(function (string $relation) {
+            $this->request['_count'][] = $relation;
+        }, is_array($relations) ? $relations : func_get_args());
 
         return $this;
     }

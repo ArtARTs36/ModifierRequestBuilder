@@ -65,7 +65,7 @@ class BuilderTest extends TestCase
         $count = 5;
 
         $expected = [
-            '_count' => $count,
+            '_limit' => $count,
         ];
 
         //
@@ -244,6 +244,26 @@ class BuilderTest extends TestCase
         $expected = [
             '_with' => 'posts',
         ];
+
+        self::assertEquals($expected, $builder->toRequest());
+    }
+
+    /**
+     * @throws \ReflectionException
+     */
+    public function testWithCount(): void
+    {
+        $builder = $this->make();
+
+        $relations = ['posts', 'comments'];
+
+        $builder->withCount($relations);
+
+        $expected = [
+            '_count' => $relations,
+        ];
+
+        //
 
         self::assertEquals($expected, $builder->toRequest());
     }

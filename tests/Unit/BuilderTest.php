@@ -225,6 +225,30 @@ class BuilderTest extends TestCase
     }
 
     /**
+     * @covers \ArtARTs36\ModifierRequestBuilder\Builder::when
+     */
+    public function testWhen(): void
+    {
+        $builder = $this->make();
+
+        $builder->when(true, function (Builder $builder) {
+            $builder->with('posts');
+        });
+
+        $builder->when(false, function (Builder $builder) {
+            $builder->with('comments');
+        });
+
+        //
+
+        $expected = [
+            '_with' => 'posts',
+        ];
+
+        self::assertEquals($expected, $builder->toRequest());
+    }
+
+    /**
      * @return Builder
      * @throws \ReflectionException
      */

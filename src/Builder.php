@@ -20,6 +20,9 @@ class Builder implements Arrayable
 {
     use Compilers;
 
+    public const SORT_DIRECTION_ASC = 'asc';
+    public const SORT_DIRECTION_DESC = 'desc';
+
     private const MODIFIER_CONDITIONS = [
         '=' => Condition::CONDITION_EQUAL,
         '!=' => Condition::CONDITION_NOT_EQUAL,
@@ -98,7 +101,7 @@ class Builder implements Arrayable
      */
     public function get(): Collection
     {
-        return collect($this->client->json('GET', $this->getUrl(), $this->request));
+        return collect($this->send(__FUNCTION__));
     }
 
     /**
@@ -148,7 +151,11 @@ class Builder implements Arrayable
 
     public function find(int $id)
     {
-        return $this->client->json('GET', $this->getUrl($id), $this->request);
+        $this
+            ->where('id', $id)
+            ->take(1);
+
+        return $this->send(__FUNCTION__);
     }
 
     /**
@@ -182,7 +189,7 @@ class Builder implements Arrayable
      * @param string $direction
      * @return $this
      */
-    public function orderBy(string $column, string $direction = 'asc'): self
+    public function orderBy(string $column, string $direction = self::SORT_DIRECTION_ASC): self
     {
         $this->request['_sort'][$column] = $direction;
 
@@ -195,9 +202,7 @@ class Builder implements Arrayable
      */
     public function orderByDesc(string $column): self
     {
-        $this->request['_sort'][$column] = 'desc';
-
-        return $this;
+        return $this->orderBy($column, static::SORT_DIRECTION_DESC);
     }
 
     /**
@@ -255,5 +260,18 @@ class Builder implements Arrayable
     public function getEagerLoads(): array
     {
         return $this->request['_with'];
+    }
+
+    /**
+     * @param string $action
+     * @return array
+     */
+    protected function send(string $action): array
+    {
+        return $this->client->json(
+            $this->urlStrategy->method($action),
+            $this->urlStrategy->url($action),
+            $this->toRequest()
+        );
     }
 }

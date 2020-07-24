@@ -2,6 +2,8 @@
 
 namespace ArtARTs36\ModifierRequestBuilder\Support;
 
+use ArtARTs36\ModifierRequestBuilder\Builder;
+
 /**
  * Trait Compilers
  * @package ArtARTs36\ModifierRequestBuilder\Support
@@ -16,7 +18,7 @@ trait Compilers
         return implode(
             $this->externalConfig->delimiterFields(),
             array_map(function ($column, $direction) {
-                return ($direction === 'desc' ? '-' : '') . $column;
+                return ($direction === Builder::SORT_DIRECTION_DESC ? '-' : '') . $column;
             }, array_keys($this->request['_sort']), $this->request['_sort'])
         );
     }
